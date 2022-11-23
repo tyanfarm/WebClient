@@ -1,5 +1,13 @@
-from connection import ClientConnection
+from threading import Thread
+import threading
+from connection import MultipleConnection
+from inputLink import inputLink
 
-website = "http://example.com/"
+websiteList = inputLink()
 
-ClientConnection(website)
+try:
+    t = threading.Thread(target = MultipleConnection, args = (websiteList, ))
+    t.start()
+except:
+    print('ERROR')
+

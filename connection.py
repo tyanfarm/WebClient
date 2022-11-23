@@ -73,3 +73,7 @@ def ClientConnection(website):
         print("Disconnect")
     finally:
         s.close()
+
+def MultipleConnection(websiteList):
+    for i in range(len(websiteList)):
+        ClientConnection(websiteList[i])
