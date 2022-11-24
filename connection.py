@@ -75,5 +75,5 @@ def ClientConnection(website):
         s.close()
 
 def MultipleConnection(websiteList):
-    for i in range(len(websiteList)):
-        ClientConnection(websiteList[i])
+    for i in websiteList:
+        ClientConnection(i)

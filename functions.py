@@ -88,25 +88,25 @@ def ChunkedBody(s, body):
                 # đổi kiểu string -> thập lục phân -> thập phân
                 chunked_size = int(chunked_size_str[ : chunked_size_str.find("\r\n")], 16)
                 break
-            # nếu chunked_size = 0 tức là hết phần body
-            if chunked_size == 0:
-                break
-            # lấy chunked
-            chunked = b""
-            res_len = 0     # size của chunked đang lấy
-            # nhận đến khi chiều dài chunked = chunked_size
-            while res_len < chunked_size:
-                # nếu nhận chưa hết thì nhận tiếp phần còn lại 
-                res = s.recv(chunked_size - res_len)
-                res_len = res_len + len(res)
-                chunked = chunked + res
-            # chép chunked vào body
-            body = body + chunked
-            # bỏ đi chuỗi "\r\n" thừa
-            delete = s.recv(2)
-            # nếu body rỗng thì thoát vòng lặp
-            if not body:
-                break
+        # nếu chunked_size = 0 tức là hết phần body
+        if chunked_size == 0:
+            break
+        # lấy chunked
+        chunked = b""
+        res_len = 0     # size của chunked đang lấy
+        # nhận đến khi chiều dài chunked = chunked_size
+        while res_len < chunked_size:
+            # nếu nhận chưa hết thì nhận tiếp phần còn lại 
+            res = s.recv(chunked_size - res_len)
+            res_len = res_len + len(res)
+            chunked = chunked + res
+        # chép chunked vào body
+        body = body + chunked
+        # bỏ đi chuỗi "\r\n" thừa
+        delete = s.recv(2)
+        # nếu body rỗng thì thoát vòng lặp
+        if not body:
+            break
     return body
 
 def isSubFolder(website):
