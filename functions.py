@@ -18,7 +18,8 @@ def getPath(website):
     return path
 
 # Hàm find() trả về -1 nếu không tìm thấy giá trị
-def getHeader(s, header):
+def getHeader(s):
+    header = ""
     #lấy header
     while True:
         header = header + s.recv(1).decode()
@@ -76,13 +77,15 @@ def ContentLengthBody(s, content_length):
 def isChunked(pos_c):
     return pos_c != -1
 
-def ChunkedBody(s, body):
+def ChunkedBody(s):
+    body = b""
     while True:
         # lấy size của chunked
         chunked_size_str = ""
         while True:
             # lấy về dạng nhị phân và đổi về kiểu string
             chunked_size_str = chunked_size_str + s.recv(1).decode()
+
             # dừng nhận khi tìm thấy \r\n, khi đó đã lấy đủ các đoạn chunked
             if chunked_size_str.find("\r\n") != -1:
                 # đổi kiểu string -> thập lục phân -> thập phân
@@ -113,52 +116,48 @@ def isSubFolder(website):
     return (website[website.rfind("/") + 1 : ]  == "" and website.rfind("/", 0, website.rfind("/") - 1) != -1)
 
 def SubFolderBody(s, host, website, body):
-    # nếu đường link là subfolder
-    if (isSubFolder(website)):
-        # tạo folder có tên nằm giữa 2 kí tự "/" phải cùng
-        foldername = website[website.rfind("/", 0, website.rfind("/") - 1) + 1 : website.rfind("/")]
-        # "./" có nghĩa là bằng cấp với file python đang chạy
-        folderpath = "./" + foldername
-        # tạo folder có tên là foldername
-        path = pathlib.Path(folderpath)
-        # nếu đã có sẵn thì không cần tạo tiếp
-        path.mkdir(exist_ok = True)
-        # tìm vị trí của kí tự "href=" đầu tiên
-        pos_cur_file = body.find(b"href=")
-        # đọc đến khi hết "href=" trong body
-        while pos_cur_file != -1:
-            # nếu "href=" có file cần tải thì gửi request để tải file với file cần tải phải có đuôi là một kiểu nhất định
-            if body.find(b".", pos_cur_file, body.find(b">", pos_cur_file)) != -1:
-                # tên file nằm giữa " "
-                filename = body[body.find(b"\"", pos_cur_file) + 1 : body.find(b"\"", body.find(b"\"", pos_cur_file) + 1)].decode()
-                # đường dẫn = website gốc + tên file
-                path = website[website.find("/") : ] + filename
-                request = "GET " + path + " HTTP/1.1\r\nHost:" + host + "\r\n\r\n"
-                s.send(request.encode())
+    # tạo folder có tên nằm giữa 2 kí tự "/" phải cùng
+    foldername = website[website.rfind("/", 0, website.rfind("/") - 1) + 1 : website.rfind("/")]
+    # "./" có nghĩa là bằng cấp với file python đang chạy
+    folderpath = "./" + foldername
+    # tạo folder có tên là foldername
+    path = pathlib.Path(folderpath)
+    # nếu đã có sẵn thì không cần tạo tiếp
+    path.mkdir(exist_ok = True)
+    # tìm vị trí của kí tự "href=" đầu tiên
+    pos_cur_file = body.find(b"href=")
+    # đọc đến khi hết "href=" trong body
+    while pos_cur_file != -1:
+        # nếu "href=" có file cần tải thì gửi request để tải file với file cần tải phải có đuôi là một kiểu nhất định
+        if body.find(b".", pos_cur_file, body.find(b">", pos_cur_file)) != -1:
+            # tên file nằm giữa " "
+            filename = body[body.find(b"\"", pos_cur_file) + 1 : body.find(b"\"", body.find(b"\"", pos_cur_file) + 1)].decode()
+            # đường dẫn = website gốc + tên file
+            path = website[website.find("/") : ] + filename
+            request = "GET " + path + " HTTP/1.1\r\nHost:" + host + "\r\n\r\n"
+            s.send(request.encode())
                 
-                # lấy header của từng file
-                header = ""
-                header = getHeader(s, header)
-                # Tìm content-length, nếu không có gán bằng 0
-                content_length = ContentLength(header)
+            # lấy header của từng file
+            header = getHeader(s)
+            # Tìm content-length, nếu không có gán bằng 0
+            content_length = ContentLength(header)
 
-                # tìm Transfer-Encoding: chunked
-                pos_c = header.find("Transfer-Encoding: chunked")
+            # tìm Transfer-Encoding: chunked
+            pos_c = header.find("Transfer-Encoding: chunked")
 
-                # lấy body của từng file
-                body_subfile = b""
-                # nếu cho biết trước content_length
-                if isContentLength(content_length):
-                    body_subfile = ContentLengthBody(s, body_subfile)
+            # lấy body của từng file
+            # nếu cho biết trước content_length
+            if isContentLength(content_length):
+                body_subfile = ContentLengthBody(s, content_length)
                 
-                # nếu kiểu được cho là chunked
-                elif isChunked(pos_c):
-                    body_subfile = ChunkedBody(s, body_subfile)
+            # nếu kiểu được cho là chunked
+            elif isChunked(pos_c):
+                body_subfile = ChunkedBody(s)
 
-                # ghi vào file
-                file = open("./" + foldername + "/" + filename, 'wb')
-                file.write(body_subfile)
-                file.close()
-            # Tìm vị trí "href=" kế tiếp
-            pos_cur_file = body.find(b"href=", pos_cur_file + 6)
+            # ghi vào file
+            file = open("./" + foldername + "/" + filename,'wb')
+            file.write(body_subfile)
+            file.close()
+        # Tìm vị trí "href=" kế tiếp
+        pos_cur_file = body.find(b"href=", pos_cur_file + 6)
                 

@@ -22,10 +22,10 @@ def ClientConnection(website):
 
     # host là phần trước dấu "/" đầu tiên
     host = getHost(website)
-
+    
     # path là phần sau dấu "/" đầu tiên, nếu sau đó không có gì nữa thì mặc định là index.html
     path = getPath(website)
-
+    
     # tạo kết nối đến server ở cổng 80
     s.connect((host, 80))
 
@@ -37,8 +37,7 @@ def ClientConnection(website):
 
     try:
         #lấy header
-        header = ""
-        header = getHeader(s, header)
+        header = getHeader(s)
 
         # tìm Content-Length, nếu không có gán nó bằng 0
         content_length = ContentLength(header)
@@ -59,14 +58,20 @@ def ClientConnection(website):
             
         # Nếu là chunked
         elif (isChunked(pos_c)):
-            body = ChunkedBody(s, body)
+            body = ChunkedBody(s)
 
         # Nếu đường link là subfolder
         if (isSubFolder(website)):
             SubFolderBody(s, host, website, body)
         else:
+            # "./" có nghĩa là bằng cấp với file python đang chạy
+            folder_path_host = "./" + host
+            # tạo folder có tên là foldername
+            path = pathlib.Path(folder_path_host)
+            # nếu đã có sẵn thì không cần tạo tiếp
+            path.mkdir(exist_ok = True)
             # ghi vào file
-            file = open(filename, 'wb')
+            file = open("./" + host + "/" + filename, 'wb')
             file.write(body)
             file.close()
     except:
@@ -74,6 +79,3 @@ def ClientConnection(website):
     finally:
         s.close()
 
-def MultipleConnection(websiteList):
-    for i in websiteList:
-        ClientConnection(i)
