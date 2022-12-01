@@ -14,7 +14,7 @@ from functions import isSubFolder
 from functions import SubFolderBody
 
 def ClientConnection(website):
-    # Tạo TPC socket IPv4
+    # Tạo TCP socket IPv4
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     # Nếu website có "https://" thì xóa, thiếu "/" thì thêm
